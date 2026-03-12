@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ArtistCard } from "@/components/artist/ArtistCard";
 import { Music, ShoppingBag, Radio, ArrowRight } from "lucide-react";
@@ -28,6 +29,8 @@ const FEATURES = [
 ];
 
 export default async function HomePage() {
+  const user = await getCurrentUser();
+
   const featuredArtists = await prisma.artist.findMany({
     where: { isPublished: true },
     include: { _count: { select: { tracks: true } } },
@@ -53,13 +56,31 @@ export default async function HomePage() {
               with fans. Everything artists need in one place.
             </p>
             <div className="mt-8 flex gap-4">
-              <Link
-                href="/sign-up"
-                className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-              >
-                Get Started Free
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              {user?.artistId ? (
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
+                >
+                  Go to Dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : user ? (
+                <Link
+                  href="/onboarding"
+                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
+                >
+                  Complete Your Profile
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : (
+                <Link
+                  href="/sign-up"
+                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
+                >
+                  Get Started Free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              )}
               <Link
                 href="/explore"
                 className="inline-flex items-center gap-2 rounded-lg border border-neutral-700 px-6 py-3 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
@@ -118,24 +139,26 @@ export default async function HomePage() {
       )}
 
       {/* CTA */}
-      <section className="py-20 border-t border-neutral-800/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold">
-            Ready to share your music?
-          </h2>
-          <p className="mt-4 text-neutral-400 max-w-md mx-auto">
-            Join {APP_NAME} today and start uploading tracks, selling products,
-            and building your fanbase.
-          </p>
-          <Link
-            href="/sign-up"
-            className="inline-flex items-center gap-2 mt-8 rounded-lg bg-amber-500 px-8 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-          >
-            Create Your Artist Profile
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </section>
+      {!user?.artistId && (
+        <section className="py-20 border-t border-neutral-800/50">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold">
+              Ready to share your music?
+            </h2>
+            <p className="mt-4 text-neutral-400 max-w-md mx-auto">
+              Join {APP_NAME} today and start uploading tracks, selling products,
+              and building your fanbase.
+            </p>
+            <Link
+              href={user ? "/onboarding" : "/sign-up"}
+              className="inline-flex items-center gap-2 mt-8 rounded-lg bg-amber-500 px-8 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
+            >
+              {user ? "Complete Your Profile" : "Create Your Artist Profile"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      )}
 
       <Footer />
     </div>
