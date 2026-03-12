@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── AUTH & USERS ────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  passwordHash  String?
+  role          UserRole  @default(FAN)
+
+  artist   Artist?
+  orders   Order[]
+  accounts Account[]
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  FAN
+  ARTIST
+  ADMIN
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── ARTIST ──────────────────────────────────────────────
+
+model Artist {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name            String
+  slug            String  @unique
+  bio             String? @db.Text
+  avatarUrl       String?
+  bannerUrl       String?
+  genre           String?
+  location        String?
+  websiteUrl      String?
+  socialLinks     Json?
+
+  stripeAccountId String?
+  stripeOnboarded Boolean @default(false)
+
+  tracks   Track[]
+  albums   Album[]
+  products DigitalProduct[]
+
+  isVerified  Boolean  @default(false)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── MUSIC ───────────────────────────────────────────────
+
+model Track {
+  id       String  @id @default(cuid())
+  artistId String
+  artist   Artist  @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  albumId  String?
+  album    Album?  @relation(fields: [albumId], references: [id], onDelete: SetNull)
+
+  title          String
+  slug           String
+  description    String?  @db.Text
+  duration       Int?
+  trackNumber    Int?
+
+  fileUrl        String
+  fileSize       Int?
+  fileFormat     String?
+  waveformData   Json?
+
+  coverUrl       String?
+  isPublished    Boolean  @default(false)
+  isDownloadable Boolean  @default(false)
+  price          Decimal? @db.Decimal(10, 2)
+  playCount      Int      @default(0)
+
+  genre  String?
+  tags   String[]
+  lyrics String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([artistId, slug])
+  @@index([artistId])
+  @@index([genre])
+}
+
+model Album {
+  id       String @id @default(cuid())
+  artistId String
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  title       String
+  slug        String
+  description String?   @db.Text
+  coverUrl    String?
+  releaseDate DateTime?
+  albumType   AlbumType @default(ALBUM)
+  isPublished Boolean   @default(false)
+  price       Decimal?  @db.Decimal(10, 2)
+
+  tracks Track[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([artistId, slug])
+}
+
+enum AlbumType {
+  SINGLE
+  EP
+  ALBUM
+  COMPILATION
+}
+
+// ─── DIGITAL PRODUCTS & COMMERCE ─────────────────────────
+
+model DigitalProduct {
+  id       String @id @default(cuid())
+  artistId String
+  artist   Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  name           String
+  slug           String
+  description    String?     @db.Text
+  price          Decimal     @db.Decimal(10, 2)
+  compareAtPrice Decimal?    @db.Decimal(10, 2)
+  productType    ProductType
+
+  fileUrl      String?
+  thumbnailUrl String?
+  previewUrl   String?
+
+  isPublished   Boolean @default(false)
+  maxDownloads  Int?
+  downloadCount Int     @default(0)
+
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([artistId, slug])
+}
+
+enum ProductType {
+  BEAT
+  SAMPLE_PACK
+  PRESET
+  STEM
+  SHEET_MUSIC
+  ARTWORK
+  OTHER
+}
+
+model Order {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  currency    String      @default("usd")
+
+  stripePaymentId String? @unique
+  stripeSessionId String?
+
+  items OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model OrderItem {
+  id        String         @id @default(cuid())
+  orderId   String
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   DigitalProduct @relation(fields: [productId], references: [id])
+
+  quantity    Int     @default(1)
+  unitPrice   Decimal @db.Decimal(10, 2)
+  productName String
+  artistId    String
+
+  createdAt DateTime @default(now())
+}
