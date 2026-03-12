@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getArtistBySlug } from "@/modules/artist/artist.service";
 import { listPublicTracks } from "@/modules/music/music.service";
@@ -138,8 +139,9 @@ export default async function ArtistProfilePage({
           <section className="mb-10">
             <h2 className="text-xl font-semibold mb-4">Store</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {products.map((product: { id: string; name: string; thumbnailUrl: string | null; productType: string; price: unknown; description: string | null }) => (
-                <Card key={product.id}>
+              {products.map((product: { id: string; slug: string; name: string; thumbnailUrl: string | null; productType: string; price: unknown; description: string | null }) => (
+                <Link key={product.id} href={`/${artist.slug}/products/${product.slug}`}>
+                <Card className="hover:border-neutral-700 transition-colors">
                   <CardContent>
                     {product.thumbnailUrl ? (
                       <img
@@ -166,6 +168,7 @@ export default async function ArtistProfilePage({
                     )}
                   </CardContent>
                 </Card>
+                </Link>
               ))}
             </div>
           </section>

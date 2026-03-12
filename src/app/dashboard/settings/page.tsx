@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Card, CardContent, CardTitle } from "@/components/ui/Card";
 import { UploadDropzone } from "@/components/music/UploadDropzone";
+import { Badge } from "@/components/ui/Badge";
+import { ExternalLink } from "lucide-react";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
@@ -17,6 +19,11 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [stripeStatus, setStripeStatus] = useState<{
+    connected: boolean;
+    chargesEnabled?: boolean;
+  } | null>(null);
+  const [connectingStripe, setConnectingStripe] = useState(false);
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -62,7 +69,26 @@ export default function SettingsPage() {
       }
     }
     fetchArtist();
+
+    // Fetch Stripe Connect status
+    fetch("/api/stripe/connect/status")
+      .then((res) => res.json())
+      .then((data) => setStripeStatus(data))
+      .catch(() => {});
   }, [artistId]);
+
+  async function handleConnectStripe() {
+    setConnectingStripe(true);
+    try {
+      const res = await fetch("/api/stripe/connect", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } finally {
+      setConnectingStripe(false);
+    }
+  }
 
   async function handleAvatarUpload(file: File) {
     const formData = new FormData();
@@ -261,6 +287,58 @@ export default function SettingsPage() {
               onChange={(e) => setForm({ ...form, youtube: e.target.value })}
               placeholder="Channel URL"
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardTitle className="mb-4">Payments</CardTitle>
+          <CardContent>
+            {stripeStatus === null ? (
+              <p className="text-sm text-neutral-500">Loading...</p>
+            ) : stripeStatus.connected && stripeStatus.chargesEnabled ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="success">Connected</Badge>
+                <span className="text-sm text-neutral-400">
+                  Stripe account is active and ready to receive payments
+                </span>
+              </div>
+            ) : stripeStatus.connected ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge variant="warning">Pending</Badge>
+                  <span className="text-sm text-neutral-400">
+                    Stripe account setup incomplete
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  isLoading={connectingStripe}
+                  onClick={handleConnectStripe}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                  Complete Setup
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-neutral-400">
+                  Connect your Stripe account to start receiving payments for
+                  your products.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  isLoading={connectingStripe}
+                  onClick={handleConnectStripe}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                  Connect Stripe
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
