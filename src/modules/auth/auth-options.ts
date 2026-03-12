@@ -56,9 +56,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.role = (user as Record<string, unknown>).role as string;
-        token.artistId = (user as Record<string, unknown>).artistId as string | null;
-        token.artistSlug = (user as Record<string, unknown>).artistSlug as string | null;
+        token.role = (user as unknown as Record<string, unknown>).role as string;
+        token.artistId = (user as unknown as Record<string, unknown>).artistId as string | null;
+        token.artistSlug = (user as unknown as Record<string, unknown>).artistSlug as string | null;
       }
       if (trigger === "update" && session) {
         token.role = session.role;

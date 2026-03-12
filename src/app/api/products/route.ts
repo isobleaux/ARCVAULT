@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { createTrack, listArtistTracks } from "@/modules/music/music.service";
-import { createTrackSchema } from "@/modules/music/music.validations";
+import {
+  createProduct,
+  listArtistProducts,
+} from "@/modules/products/products.service";
+import { createProductSchema } from "@/modules/products/products.validations";
 import { z } from "zod";
 
 export async function POST(req: Request) {
@@ -12,9 +15,9 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const data = createTrackSchema.parse(body);
-    const track = await createTrack(user.artistId, data);
-    return NextResponse.json(track, { status: 201 });
+    const data = createProductSchema.parse(body);
+    const product = await createProduct(user.artistId, data);
+    return NextResponse.json(product, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -22,7 +25,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    console.error("Create track error:", error);
+    console.error("Create product error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -37,8 +40,8 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const tracks = await listArtistTracks(user.artistId);
-    return NextResponse.json(tracks);
+    const products = await listArtistProducts(user.artistId);
+    return NextResponse.json(products);
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

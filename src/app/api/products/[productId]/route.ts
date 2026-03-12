@@ -1,24 +1,27 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import {
-  getTrackById,
-  updateTrack,
-  deleteTrack,
-} from "@/modules/music/music.service";
-import { updateTrackSchema } from "@/modules/music/music.validations";
+  getProductById,
+  updateProduct,
+  deleteProduct,
+} from "@/modules/products/products.service";
+import { updateProductSchema } from "@/modules/products/products.validations";
 import { z } from "zod";
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ trackId: string }> }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   try {
-    const { trackId } = await params;
-    const track = await getTrackById(trackId);
-    if (!track) {
-      return NextResponse.json({ error: "Track not found" }, { status: 404 });
+    const { productId } = await params;
+    const product = await getProductById(productId);
+    if (!product) {
+      return NextResponse.json(
+        { error: "Product not found" },
+        { status: 404 }
+      );
     }
-    return NextResponse.json(track);
+    return NextResponse.json(product);
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },
@@ -29,7 +32,7 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ trackId: string }> }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -37,16 +40,16 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { trackId } = await params;
-    const existing = await getTrackById(trackId);
+    const { productId } = await params;
+    const existing = await getProductById(productId);
     if (!existing || existing.artistId !== user.artistId) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
     const body = await req.json();
-    const data = updateTrackSchema.parse(body);
-    const track = await updateTrack(trackId, data);
-    return NextResponse.json(track);
+    const data = updateProductSchema.parse(body);
+    const product = await updateProduct(productId, data);
+    return NextResponse.json(product);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -63,7 +66,7 @@ export async function PATCH(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: Promise<{ trackId: string }> }
+  { params }: { params: Promise<{ productId: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -71,13 +74,13 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { trackId } = await params;
-    const existing = await getTrackById(trackId);
+    const { productId } = await params;
+    const existing = await getProductById(productId);
     if (!existing || existing.artistId !== user.artistId) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    await deleteTrack(trackId);
+    await deleteProduct(productId);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(
