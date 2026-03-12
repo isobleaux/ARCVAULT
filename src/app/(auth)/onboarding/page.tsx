@@ -54,6 +54,7 @@ export default function OnboardingPage() {
     try {
       const res = await fetch("/api/artists", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, slug, bio, genre, location }),
       });

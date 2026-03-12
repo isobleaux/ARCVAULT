@@ -8,6 +8,7 @@ export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
     if (!user) {
+      console.error("POST /api/artists — getCurrentUser() returned null. Check NEXTAUTH_SECRET and cookies.");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
