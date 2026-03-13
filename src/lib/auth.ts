@@ -46,7 +46,14 @@ export async function getCurrentUser(): Promise<CurrentUser | undefined> {
       artistSlug: (token.artistSlug as string) || null,
     };
   } catch (e) {
-    console.error("getCurrentUser failed:", e);
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("decryption")) {
+      console.error(
+        "getCurrentUser: JWT decryption failed — the session cookie was likely encrypted with a different NEXTAUTH_SECRET. Clear browser cookies and sign in again."
+      );
+    } else {
+      console.error("getCurrentUser failed:", msg);
+    }
     return undefined;
   }
 }
