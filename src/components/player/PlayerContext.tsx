@@ -19,6 +19,8 @@ export interface PlayerTrack {
   duration?: number | null;
 }
 
+export type RepeatMode = "off" | "all" | "one";
+
 interface PlayerContextType {
   currentTrack: PlayerTrack | null;
   isPlaying: boolean;
@@ -26,6 +28,8 @@ interface PlayerContextType {
   duration: number;
   volume: number;
   queue: PlayerTrack[];
+  shuffleMode: boolean;
+  repeatMode: RepeatMode;
   play: (track: PlayerTrack) => void;
   pause: () => void;
   resume: () => void;
@@ -34,6 +38,8 @@ interface PlayerContextType {
   playQueue: (tracks: PlayerTrack[], startIndex?: number) => void;
   next: () => void;
   previous: () => void;
+  toggleShuffle: () => void;
+  cycleRepeat: () => void;
 }
 
 const PlayerContext = createContext<PlayerContextType>({
@@ -43,6 +49,8 @@ const PlayerContext = createContext<PlayerContextType>({
   duration: 0,
   volume: 0.8,
   queue: [],
+  shuffleMode: false,
+  repeatMode: "off",
   play: () => {},
   pause: () => {},
   resume: () => {},
@@ -51,6 +59,8 @@ const PlayerContext = createContext<PlayerContextType>({
   playQueue: () => {},
   next: () => {},
   previous: () => {},
+  toggleShuffle: () => {},
+  cycleRepeat: () => {},
 });
 
 export function usePlayer() {
@@ -66,6 +76,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(0.8);
   const [queue, setQueue] = useState<PlayerTrack[]>([]);
   const [queueIndex, setQueueIndex] = useState(-1);
+  const [shuffleMode, setShuffleMode] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<RepeatMode>("off");
   const reportedRef = useRef(false);
 
   useEffect(() => {
@@ -80,11 +92,35 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const onDurationChange = () => setDuration(audio.duration || 0);
     const onEnded = () => {
       setIsPlaying(false);
-      // Auto-play next
-      if (queueIndex < queue.length - 1) {
-        const nextIdx = queueIndex + 1;
+
+      // Repeat one: replay current track
+      if (repeatMode === "one") {
+        audio.currentTime = 0;
+        audio.play();
+        setIsPlaying(true);
+        return;
+      }
+
+      // Determine next index
+      let nextIdx: number;
+      if (shuffleMode) {
+        if (queue.length <= 1) {
+          nextIdx = 0;
+        } else {
+          do {
+            nextIdx = Math.floor(Math.random() * queue.length);
+          } while (nextIdx === queueIndex && queue.length > 1);
+        }
+      } else {
+        nextIdx = queueIndex + 1;
+      }
+
+      if (nextIdx < queue.length) {
         setQueueIndex(nextIdx);
         loadAndPlay(queue[nextIdx]);
+      } else if (repeatMode === "all" && queue.length > 0) {
+        setQueueIndex(0);
+        loadAndPlay(queue[0]);
       }
     };
 
@@ -97,7 +133,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener("durationchange", onDurationChange);
       audio.removeEventListener("ended", onEnded);
     };
-  }, [queue, queueIndex]);
+  }, [queue, queueIndex, shuffleMode, repeatMode]);
 
   const loadAndPlay = useCallback(
     (track: PlayerTrack) => {
@@ -108,7 +144,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setIsPlaying(true);
       reportedRef.current = false;
 
-      // Report play after 3 seconds
       setTimeout(() => {
         if (!reportedRef.current) {
           reportedRef.current = true;
@@ -166,14 +201,29 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const next = useCallback(() => {
-    if (queueIndex < queue.length - 1) {
+    if (shuffleMode) {
+      if (queue.length <= 1) return;
+      let nextIdx: number;
+      do {
+        nextIdx = Math.floor(Math.random() * queue.length);
+      } while (nextIdx === queueIndex && queue.length > 1);
+      setQueueIndex(nextIdx);
+      loadAndPlay(queue[nextIdx]);
+    } else if (queueIndex < queue.length - 1) {
       const nextIdx = queueIndex + 1;
       setQueueIndex(nextIdx);
       loadAndPlay(queue[nextIdx]);
+    } else if (repeatMode === "all" && queue.length > 0) {
+      setQueueIndex(0);
+      loadAndPlay(queue[0]);
     }
-  }, [queue, queueIndex, loadAndPlay]);
+  }, [queue, queueIndex, loadAndPlay, shuffleMode, repeatMode]);
 
   const previous = useCallback(() => {
+    if (audioRef.current && audioRef.current.currentTime > 3) {
+      audioRef.current.currentTime = 0;
+      return;
+    }
     if (queueIndex > 0) {
       const prevIdx = queueIndex - 1;
       setQueueIndex(prevIdx);
@@ -182,6 +232,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.currentTime = 0;
     }
   }, [queue, queueIndex, loadAndPlay]);
+
+  const toggleShuffle = useCallback(() => {
+    setShuffleMode((prev) => !prev);
+  }, []);
+
+  const cycleRepeat = useCallback(() => {
+    setRepeatMode((prev) => {
+      if (prev === "off") return "all";
+      if (prev === "all") return "one";
+      return "off";
+    });
+  }, []);
 
   return (
     <PlayerContext.Provider
@@ -192,6 +254,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         duration,
         volume,
         queue,
+        shuffleMode,
+        repeatMode,
         play,
         pause,
         resume,
@@ -200,6 +264,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         playQueue,
         next,
         previous,
+        toggleShuffle,
+        cycleRepeat,
       }}
     >
       {children}

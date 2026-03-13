@@ -88,9 +88,10 @@ model Artist {
   stripeAccountId String?
   stripeOnboarded Boolean @default(false)
 
-  tracks   Track[]
-  albums   Album[]
-  products DigitalProduct[]
+  tracks          Track[]
+  albums          Album[]
+  products        DigitalProduct[]
+  royaltySplits   RoyaltySplit[]   @relation("CollaboratorSplits")
 
   isVerified  Boolean  @default(false)
   isPublished Boolean  @default(false)
@@ -127,6 +128,9 @@ model Track {
   genre  String?
   tags   String[]
   lyrics String? @db.Text
+
+  royaltySplits  RoyaltySplit[]
+  playlistTracks PlaylistTrack[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -230,6 +234,66 @@ enum OrderStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+// ─── ROYALTY SPLITTING ──────────────────────────────────
+
+model RoyaltySplit {
+  id       String @id @default(cuid())
+  trackId  String
+  track    Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  recipientName  String
+  recipientEmail String
+  role           String   // e.g. "producer", "songwriter", "vocalist", "featured"
+  percentage     Decimal  @db.Decimal(5, 2) // 0.00 - 100.00
+
+  artistId String? // if the collaborator is a registered artist
+  artist   Artist? @relation("CollaboratorSplits", fields: [artistId], references: [id], onDelete: SetNull)
+
+  isPrimary Boolean @default(false) // the track owner
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([trackId, recipientEmail])
+  @@index([trackId])
+  @@index([recipientEmail])
+}
+
+// ─── PLAYLISTS ──────────────────────────────────────────
+
+model Playlist {
+  id     String @id @default(cuid())
+  userId String
+
+  name        String
+  slug        String
+  description String? @db.Text
+  coverUrl    String?
+  isPublic    Boolean @default(false)
+
+  tracks PlaylistTrack[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, slug])
+  @@index([userId])
+}
+
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  trackId    String
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  position   Int
+
+  addedAt DateTime @default(now())
+
+  @@unique([playlistId, trackId])
+  @@index([playlistId])
 }
 
 model OrderItem {

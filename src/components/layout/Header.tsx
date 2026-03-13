@@ -28,6 +28,12 @@ export function Header() {
             >
               Explore
             </Link>
+            <Link
+              href="/radio"
+              className="text-sm text-neutral-400 hover:text-white transition-colors"
+            >
+              Radio
+            </Link>
             {session?.user ? (
               <>
                 {(session.user as Record<string, unknown>).artistId && (
@@ -86,6 +92,13 @@ export function Header() {
             onClick={() => setMenuOpen(false)}
           >
             Explore
+          </Link>
+          <Link
+            href="/radio"
+            className="block text-sm text-neutral-400 hover:text-white"
+            onClick={() => setMenuOpen(false)}
+          >
+            Radio
           </Link>
           {session?.user ? (
             <>

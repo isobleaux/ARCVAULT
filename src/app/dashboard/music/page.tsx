@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TrackRow } from "@/components/music/TrackRow";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 
 interface Track {
@@ -145,20 +145,31 @@ export default function MusicPage() {
       ) : (
         <div className="space-y-1">
           {filtered.map((track) => (
-            <TrackRow
-              key={track.id}
-              track={track}
-              artistName={artistName || ""}
-              artistSlug={artistSlug || ""}
-              showControls
-              onEdit={() =>
-                router.push(`/dashboard/music/${track.id}/edit`)
-              }
-              onDelete={() => handleDelete(track.id)}
-              onTogglePublish={() =>
-                handleTogglePublish(track.id, track.isPublished)
-              }
-            />
+            <div key={track.id} className="relative group/row">
+              <TrackRow
+                track={track}
+                artistName={artistName || ""}
+                artistSlug={artistSlug || ""}
+                showControls
+                onEdit={() =>
+                  router.push(`/dashboard/music/${track.id}/edit`)
+                }
+                onDelete={() => handleDelete(track.id)}
+                onTogglePublish={() =>
+                  handleTogglePublish(track.id, track.isPublished)
+                }
+              />
+              <button
+                onClick={() =>
+                  router.push(`/dashboard/music/${track.id}/splits`)
+                }
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-neutral-600 hover:text-amber-400 transition-colors opacity-0 group-hover/row:opacity-100"
+                title="Manage royalty splits"
+              >
+                <Users className="h-3.5 w-3.5" />
+                Splits
+              </button>
+            </div>
           ))}
         </div>
       )}

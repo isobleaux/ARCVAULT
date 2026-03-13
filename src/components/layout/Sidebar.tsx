@@ -10,6 +10,7 @@ import {
   DollarSign,
   Settings,
   ExternalLink,
+  Radio,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/dashboard/products", label: "Products", icon: Package },
   { href: "/dashboard/earnings", label: "Earnings", icon: DollarSign },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/radio", label: "Radio", icon: Radio },
 ];
 
 export function Sidebar() {
