@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -30,8 +29,7 @@ const GENRES = [
 ];
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const { update } = useSession();
+  const { data: session, status, update } = useSession();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +39,20 @@ export default function OnboardingPage() {
   const [bio, setBio] = useState("");
   const [genre, setGenre] = useState("");
   const [location, setLocation] = useState("");
+
+  // Redirect if user already has an artist profile
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      window.location.href = "/sign-in";
+      return;
+    }
+    if (status === "authenticated") {
+      const artistId = (session?.user as Record<string, unknown>)?.artistId;
+      if (artistId) {
+        window.location.href = "/dashboard";
+      }
+    }
+  }, [status, session]);
 
   function handleNameChange(value: string) {
     setName(value);
@@ -72,11 +84,12 @@ export default function OnboardingPage() {
       await update({
         role: "ARTIST",
         artistId: artist.id,
+        artistName: artist.name,
         artistSlug: artist.slug,
       });
 
-      router.push("/dashboard");
-      router.refresh();
+      // Hard navigation to ensure server reads the fresh JWT cookie
+      window.location.href = "/dashboard";
     } catch {
       setError("Something went wrong. Please try again.");
       setIsLoading(false);

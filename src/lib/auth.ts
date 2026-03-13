@@ -8,6 +8,7 @@ type CurrentUser = {
   image: string | null;
   role: string;
   artistId: string | null;
+  artistName: string | null;
   artistSlug: string | null;
 };
 
@@ -41,6 +42,7 @@ export async function getCurrentUser(): Promise<CurrentUser | undefined> {
       image: (token.picture as string) || null,
       role: (token.role as string) || "FAN",
       artistId: (token.artistId as string) || null,
+      artistName: (token.artistName as string) || null,
       artistSlug: (token.artistSlug as string) || null,
     };
   } catch (e) {

@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          include: { artist: { select: { id: true, slug: true } } },
+          include: { artist: { select: { id: true, name: true, slug: true } } },
         });
 
         if (!user || !user.passwordHash) {
@@ -48,6 +48,7 @@ export const authOptions: NextAuthOptions = {
           image: user.image,
           role: user.role,
           artistId: user.artist?.id || null,
+          artistName: user.artist?.name || null,
           artistSlug: user.artist?.slug || null,
         };
       },
@@ -56,23 +57,28 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.role = (user as unknown as Record<string, unknown>).role as string;
-        token.artistId = (user as unknown as Record<string, unknown>).artistId as string | null;
-        token.artistSlug = (user as unknown as Record<string, unknown>).artistSlug as string | null;
+        const u = user as unknown as Record<string, unknown>;
+        token.role = u.role as string;
+        token.artistId = u.artistId as string | null;
+        token.artistName = u.artistName as string | null;
+        token.artistSlug = u.artistSlug as string | null;
       }
       if (trigger === "update" && session) {
         token.role = session.role;
         token.artistId = session.artistId;
+        token.artistName = session.artistName;
         token.artistSlug = session.artistSlug;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as Record<string, unknown>).id = token.sub;
-        (session.user as Record<string, unknown>).role = token.role;
-        (session.user as Record<string, unknown>).artistId = token.artistId;
-        (session.user as Record<string, unknown>).artistSlug = token.artistSlug;
+        const u = session.user as Record<string, unknown>;
+        u.id = token.sub;
+        u.role = token.role;
+        u.artistId = token.artistId;
+        u.artistName = token.artistName;
+        u.artistSlug = token.artistSlug;
       }
       return session;
     },

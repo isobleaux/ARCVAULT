@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -10,7 +9,6 @@ import { Music } from "lucide-react";
 import { APP_NAME } from "@/lib/constants";
 
 export default function SignInPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -31,8 +29,8 @@ export default function SignInPage() {
       setError("Invalid email or password");
       setIsLoading(false);
     } else {
-      router.push("/dashboard");
-      router.refresh();
+      // Hard navigation to ensure browser sends the fresh session cookie
+      window.location.href = "/dashboard";
     }
   }
 

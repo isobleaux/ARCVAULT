@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -10,7 +9,6 @@ import { Music } from "lucide-react";
 import { APP_NAME } from "@/lib/constants";
 
 export default function SignUpPage() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,8 +45,8 @@ export default function SignUpPage() {
         setError("Account created but sign in failed. Please try signing in.");
         setIsLoading(false);
       } else {
-        router.push("/onboarding");
-        router.refresh();
+        // Hard navigation to ensure browser sends the fresh session cookie
+        window.location.href = "/onboarding";
       }
     } catch {
       setError("Something went wrong. Please try again.");

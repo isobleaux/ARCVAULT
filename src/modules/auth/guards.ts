@@ -12,9 +12,11 @@ export async function requireAuth() {
 export async function requireArtist() {
   const user = await requireAuth();
   if (user.role !== "ARTIST" && user.role !== "ADMIN") {
+    console.log(`[requireArtist] Redirecting to /onboarding — role is "${user.role}", expected ARTIST or ADMIN`);
     redirect("/onboarding");
   }
   if (!user.artistId) {
+    console.log(`[requireArtist] Redirecting to /onboarding — artistId is null for user ${user.id}`);
     redirect("/onboarding");
   }
   return user;
