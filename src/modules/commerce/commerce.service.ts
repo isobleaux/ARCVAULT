@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { APP_URL, PLATFORM_FEE_PERCENT } from "@/lib/constants";
 
 export async function createStripeConnectAccount(artistId: string) {
@@ -14,7 +14,7 @@ export async function createStripeConnectAccount(artistId: string) {
   let accountId = artist.stripeAccountId;
 
   if (!accountId) {
-    const account = await stripe.accounts.create({
+    const account = await getStripe().accounts.create({
       type: "express",
       email: artist.user.email,
       metadata: { artistId: artist.id },
@@ -28,7 +28,7 @@ export async function createStripeConnectAccount(artistId: string) {
   }
 
   // Create onboarding link
-  const accountLink = await stripe.accountLinks.create({
+  const accountLink = await getStripe().accountLinks.create({
     account: accountId,
     refresh_url: `${APP_URL}/dashboard/settings?stripe=refresh`,
     return_url: `${APP_URL}/dashboard/settings?stripe=success`,
@@ -39,7 +39,7 @@ export async function createStripeConnectAccount(artistId: string) {
 }
 
 export async function checkStripeAccountStatus(stripeAccountId: string) {
-  const account = await stripe.accounts.retrieve(stripeAccountId);
+  const account = await getStripe().accounts.retrieve(stripeAccountId);
   return {
     chargesEnabled: account.charges_enabled,
     payoutsEnabled: account.payouts_enabled,
@@ -84,7 +84,7 @@ export async function createCheckoutSession({
     },
   });
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     mode: "payment",
     line_items: [
       {
@@ -125,7 +125,7 @@ export async function createCheckoutSession({
 }
 
 export async function handleCheckoutCompleted(sessionId: string) {
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const session = await getStripe().checkout.sessions.retrieve(sessionId);
   const orderId = session.metadata?.orderId;
 
   if (!orderId) return;
@@ -152,7 +152,7 @@ export async function handleCheckoutCompleted(sessionId: string) {
 }
 
 export async function handlePaymentFailed(sessionId: string) {
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const session = await getStripe().checkout.sessions.retrieve(sessionId);
   const orderId = session.metadata?.orderId;
 
   if (!orderId) return;
