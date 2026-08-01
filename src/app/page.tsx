@@ -1,166 +1,84 @@
 import Link from "next/link";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { APP_NAME, APP_DESCRIPTION } from "@/lib/constants";
-import { getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { ArtistCard } from "@/components/artist/ArtistCard";
-import { Music, ShoppingBag, Radio, ArrowRight } from "lucide-react";
+import { redirect } from "next/navigation";
+import { Camera, Flame, LineChart } from "lucide-react";
+
+import { ButtonLink } from "@/components/ui/button";
+import { getCurrentUserId } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 const FEATURES = [
   {
-    icon: Music,
-    title: "Upload & Stream",
-    description:
-      "Share your music with the world. High-quality audio streaming with full player controls.",
+    icon: Camera,
+    title: "Photograph the plate",
+    body: "Every component broken out separately — the chicken, the rice, the oil it was cooked in — with the assumptions behind each number shown, so you can correct them.",
   },
   {
-    icon: ShoppingBag,
-    title: "Sell Digital Products",
-    description:
-      "Sell beats, sample packs, presets, and more directly to your fans. Keep more of what you earn.",
+    icon: Flame,
+    title: "Both sides of the ledger",
+    body: "Log a session and see not just the calories but the fuel: how much came from carbohydrate, how much from fat, how much from protein.",
   },
   {
-    icon: Radio,
-    title: "Build Your Brand",
-    description:
-      "Create a stunning artist profile, grow your audience, and manage everything from one dashboard.",
+    icon: LineChart,
+    title: "Trends that mean something",
+    body: "Targets built from your own resting rate, and weekly charts that show what you actually ate against what you actually burned.",
   },
 ];
 
-export default async function HomePage() {
-  const user = await getCurrentUser();
-
-  const featuredArtists = await prisma.artist.findMany({
-    where: { isPublished: true },
-    include: { _count: { select: { tracks: true } } },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-  });
+export default async function LandingPage() {
+  const userId = await getCurrentUserId();
+  if (userId) redirect("/today");
 
   return (
-    <div className="min-h-screen bg-neutral-950">
-      <Header />
+    <main className="mx-auto w-full max-w-3xl px-5 py-14 md:py-24">
+      <header className="mb-12 flex items-center gap-2.5">
+        <span className="flex size-9 items-center justify-center rounded-xl bg-accent text-accent-ink">
+          <Camera className="size-4.5" aria-hidden />
+        </span>
+        <span className="font-display text-xl font-semibold tracking-tight">MacroSnap</span>
+      </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-amber-900/10 via-transparent to-transparent" />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24 sm:py-32 relative z-10">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">
-              Your Music.{" "}
-              <span className="text-amber-400">Your Platform.</span>
-            </h1>
-            <p className="mt-6 text-lg text-neutral-400 max-w-xl">
-              {APP_DESCRIPTION} — Upload tracks, sell products, and connect
-              with fans. Everything artists need in one place.
-            </p>
-            <div className="mt-8 flex gap-4">
-              {user?.artistId ? (
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              ) : user ? (
-                <Link
-                  href="/onboarding"
-                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-                >
-                  Complete Your Profile
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              ) : (
-                <Link
-                  href="/sign-up"
-                  className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-                >
-                  Get Started Free
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
-              <Link
-                href="/explore"
-                className="inline-flex items-center gap-2 rounded-lg border border-neutral-700 px-6 py-3 text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
-              >
-                Explore Artists
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <h1 className="font-display text-4xl leading-[1.05] font-semibold md:text-6xl">
+        Point your camera at dinner.
+        <br />
+        <span className="text-accent">Get the macros.</span>
+      </h1>
 
-      {/* Features */}
-      <section className="py-20 border-t border-neutral-800/50">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-center mb-12">
-            Everything You Need
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {FEATURES.map((feature) => (
-              <div
-                key={feature.title}
-                className="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6"
-              >
-                <feature.icon className="h-10 w-10 text-amber-500 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                <p className="text-sm text-neutral-400">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <p className="mt-5 max-w-xl text-base leading-relaxed text-muted md:text-lg">
+        A macro tracker that reads your food from a photo and works out what your
+        training burned — carbohydrate, fat and protein, not just calories.
+      </p>
 
-      {/* Featured Artists */}
-      {featuredArtists.length > 0 && (
-        <section className="py-20 border-t border-neutral-800/50">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold">Featured Artists</h2>
-              <Link
-                href="/explore"
-                className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
-              >
-                View all
-                <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {featuredArtists.map((artist: { id: string; name: string; slug: string; avatarUrl: string | null; genre: string | null; bio: string | null; _count: { tracks: number } }) => (
-                <ArtistCard key={artist.id} artist={artist} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      <div className="mt-8 flex flex-wrap gap-3">
+        <ButtonLink href="/sign-up" size="lg">
+          Get started
+        </ButtonLink>
+        <ButtonLink href="/sign-in" size="lg" variant="secondary">
+          Sign in
+        </ButtonLink>
+      </div>
 
-      {/* CTA */}
-      {!user?.artistId && (
-        <section className="py-20 border-t border-neutral-800/50">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl font-bold">
-              Ready to share your music?
-            </h2>
-            <p className="mt-4 text-neutral-400 max-w-md mx-auto">
-              Join {APP_NAME} today and start uploading tracks, selling products,
-              and building your fanbase.
-            </p>
-            <Link
-              href={user ? "/onboarding" : "/sign-up"}
-              className="inline-flex items-center gap-2 mt-8 rounded-lg bg-amber-500 px-8 py-3 text-sm font-semibold text-black hover:bg-amber-400 transition-colors"
-            >
-              {user ? "Complete Your Profile" : "Create Your Artist Profile"}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </section>
-      )}
+      <div className="mt-16 grid gap-4 md:grid-cols-3">
+        {FEATURES.map((feature) => (
+          <section key={feature.title} className="card p-5">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-accent-soft text-accent">
+              <feature.icon className="size-4.5" aria-hidden />
+            </span>
+            <h2 className="mt-3.5 text-base font-semibold">{feature.title}</h2>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted">{feature.body}</p>
+          </section>
+        ))}
+      </div>
 
-      <Footer />
-    </div>
+      <p className="mt-14 max-w-xl text-xs leading-relaxed text-faint">
+        Photo estimates and burn figures come from population-average models. They are
+        good enough to steer a diet by, and not a substitute for a food scale, a lab, or
+        medical advice.{" "}
+        <Link href="/sign-up" className="text-accent underline underline-offset-2">
+          Start tracking
+        </Link>
+        .
+      </p>
+    </main>
   );
 }

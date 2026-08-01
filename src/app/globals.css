@@ -1,35 +1,222 @@
 @import "tailwindcss";
 
+/*
+ * MacroSnap visual language
+ * ─────────────────────────
+ * Three colour jobs, kept strictly apart so a hue always means one thing:
+ *
+ *   Interaction  electric lime — buttons, focus, the active tab. Never a datum.
+ *   Energy       orange — calories, in or out, everywhere in the app.
+ *   Macros       four fixed categorical slots, assigned in the order
+ *                protein → carbs → fat → fibre and never cycled.
+ *
+ * The macro slots are documented steps validated with the dataviz palette
+ * checker in both modes: lightness band, chroma floor, CVD separation
+ * (worst adjacent pair ΔE 13.0 dark / 16.3 light under deuteranopia),
+ * normal-vision floor (19.3 / 19.6) and contrast against the card surface.
+ * In light mode carbs and fat sit just under 3:1, which is legal only because
+ * every macro mark in this app ships a visible numeric label beside it and the
+ * trends page offers a table view. Do not remove those labels.
+ */
+
+@theme {
+  --color-ink: #0b0e0d;
+  --color-surface: #151a18;
+  --color-raised: #1d2422;
+  --color-line: #29332d;
+  --color-body: #f1f4ee;
+  --color-muted: #98a29b;
+  --color-faint: #6d766f;
+  --color-grid: #2c2c2a;
+  --color-axis: #383835;
+
+  --color-accent: #c6f24e;
+  --color-accent-soft: #212c12;
+  --color-accent-ink: #0b0e0d;
+
+  --color-energy: #d95926;
+  --color-protein: #3987e5;
+  --color-carbs: #c98500;
+  --color-fat: #d55181;
+  --color-fiber: #008300;
+
+  --color-good: #0ca30c;
+  --color-warning: #fab219;
+  --color-danger: #d03b3b;
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-card: 1.125rem;
+}
+
+/*
+ * Light mode is a deliberate second set of steps from the same ramps, not an
+ * inverted copy — each was re-validated against the white card surface.
+ *
+ * These override the custom properties directly rather than nesting a second
+ * `@theme`: Tailwind hoists every `@theme` block to one `:root`, so a nested
+ * one is not media-scoped and the later values would win unconditionally.
+ */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-ink: #f7f8f5;
+    --color-surface: #ffffff;
+    --color-raised: #f2f4ef;
+    --color-line: #e1e4dc;
+    --color-body: #10140f;
+    --color-muted: #5b625a;
+    --color-faint: #838a82;
+    --color-grid: #e1e0d9;
+    --color-axis: #c3c2b7;
+
+    --color-accent: #5f8f14;
+    --color-accent-soft: #eef7dc;
+    --color-accent-ink: #ffffff;
+
+    --color-energy: #eb6834;
+    --color-protein: #2a78d6;
+    --color-carbs: #eda100;
+    --color-fat: #e87ba4;
+    --color-fiber: #008300;
+
+    --color-good: #006300;
+    --color-warning: #b07800;
+    --color-danger: #c02a2a;
+  }
+}
+
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  color-scheme: dark light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-amber-500: #f59e0b;
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background: var(--color-ink);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background:
+        radial-gradient(130% 70% at 50% -12%, #18211b 0%, transparent 62%),
+        var(--color-ink);
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  /* Every number here is read against another number, so figures must not
+     shift width as they tick. */
+  .tabular,
+  input[type="number"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-ink);
+  }
+
+  /* Below 16px, iOS zooms the viewport on focus. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+
+  /* Wide content scrolls inside its own box; the page body never does. */
+  .scroll-x {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
-::-webkit-scrollbar-track {
-  background: #171717;
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-raised);
 }
-::-webkit-scrollbar-thumb {
-  background: #404040;
-  border-radius: 4px;
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(128 128 128 / 0.14), transparent);
+  animation: shimmer 1.6s infinite;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #525252;
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
